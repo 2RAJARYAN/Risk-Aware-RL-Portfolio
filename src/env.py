@@ -2,9 +2,10 @@
 import gymnasium as gym
 import numpy as np 
 import pandas as pd
-# from data import processed_data 
-#defining the portfolio env
+from pathlib import Path
 
+
+#defining the portfolio env
 class PortfolioEnv(gym.Env):
     def __init__(self,df):
         super().__init__()
@@ -36,6 +37,7 @@ class PortfolioEnv(gym.Env):
     def reset(self):
         self.current_step=0
         self.prev_weights=np.ones(self.num_assets)/self.num_assets
+        # return self.__get_state()     #when using gym 
         return self._get_state(),{}               #as we change the gym lib->gymnasium
         #now must return two things: state, info (a dictionary).
 
@@ -80,20 +82,43 @@ class PortfolioEnv(gym.Env):
 
         next_state=self._get_state()
 
-        return next_state,float(reward),terminated,truncated,{}
+        # return next_state,reward,done,{}      
+        return next_state,float(reward),terminated,truncated,{}      
     # now must return five things: next_state, reward, terminated, truncated, info. 
-    # (done was split into terminated for naturally finishing, and truncated for hitting a time limit).
+    # (`done` was split into terminated for naturally finishing, and truncated for hitting a time limit).
 
 
-# df_final=pd.read_csv('../data/processed_data/df_final.csv')
-# df_final=pd.read_csv('../df_final.csv')
-df_final = pd.read_csv("C://Users//Raj Aryan//Documents//amdpro//MinorS//data//processed_data//df_final.csv")
+#getting you df_final  form the folder
+# 1. Dynamically find the folder this script (env.py) is sitting in
+# __file__ refers to env.py. parent goes up to 'src'. parent again goes up to 'Risk-Aware-RL-Portfolio'
+BASE_DIR=Path(__file__).resolve().parent.parent
+# 2. Build the exact path to the CSV by joining the folders
+csv_path=BASE_DIR/"data"/"processed_data"/"df_final.csv"
+# 3. Load the data
+df_final=pd.read_csv(csv_path)
+
 
 env=PortfolioEnv(df_final)
 state=env.reset()
 
 for _ in range(10):
     action=np.random.rand(env.num_assets)
-    next_state,reward,done,_=env.step(action)
+    next_state,reward,terminated,truncated,info=env.step(action)
     print("Reward : ",reward)
+
+    #reset if the episode finishes during the loop  
+    if terminated or truncated:
+        state, info = env.reset()
+
+    '''
+    Concept behind the if statement
+    * in rl ,environment is operate in `Episodes`.
+    * terminated =true then end naturally (on more trades)
+    * truncated =ture  then it stopped artificially (like you set limit on trades)
+    * If the agent just hit the final day of the stock market data, wipe the board clean and 
+      restart the timeline from the beginning (env.reset()) so the loop can safely take its next step
+    * this logic can help ppo in running millions of step without crashing. 
+    '''
+
+    
 
