@@ -75,7 +75,7 @@ Custom Gym environment:
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 project/
@@ -91,7 +91,7 @@ project/
 │   └── utils.py
 │
 ├── notebooks/
-│   └── eda.ipynb
+│   └── dj30.ipynb
 │
 ├── results/
 │   ├── plots/
@@ -102,7 +102,7 @@ project/
 
 ---
 
-## ⚙️ Installation
+##  Installation
 
 ```bash
 pip install -r requirements.txt
@@ -116,7 +116,7 @@ pip install pandas numpy matplotlib yfinance gym stable-baselines3 torch
 
 ---
 
-## 🚀 Usage
+##  Usage
 
 ### 1. Run Data Pipeline
 
