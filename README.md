@@ -174,5 +174,10 @@ python src/train.py
 * OpenAI Gym
 
 ---
+##  Team Members
+- Raj Aryan  (https://github.com/2RAJARYAN)
+- Pushkar Chaturvedi  (https://github.com/PushkarOM)
+- Harshit Arya  (https://github.com/harxhit-4907)
 
+----
 ## If you find this useful, consider giving it a star!
