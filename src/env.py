@@ -34,7 +34,10 @@ class PortfolioEnv(gym.Env):
         self.prev_weights=np.ones(self.num_assets)/self.num_assets
 
     #reset
-    def reset(self):
+    def reset(self,seed=None,options=None):
+        # By passing the seed up to the parent gym.Env class, Gymnasium automatically handles setting 
+        # up a random number generator (self.np_random) perfectly tied to that seed.
+        super().reset(seed=seed)
         self.current_step=0
         self.prev_weights=np.ones(self.num_assets)/self.num_assets
         # return self.__get_state()     #when using gym 
@@ -100,7 +103,7 @@ df_final=pd.read_csv(csv_path)
 
 env=PortfolioEnv(df_final)
 state=env.reset()
-
+'''
 for _ in range(10):
     action=np.random.rand(env.num_assets)
     next_state,reward,terminated,truncated,info=env.step(action)
@@ -108,9 +111,10 @@ for _ in range(10):
 
     #reset if the episode finishes during the loop  
     if terminated or truncated:
-        state, info = env.reset()
+        state, info = env.reset()'''
 
-    '''
+
+'''
     Concept behind the if statement
     * in rl ,environment is operate in `Episodes`.
     * terminated =true then end naturally (on more trades)
@@ -118,7 +122,7 @@ for _ in range(10):
     * If the agent just hit the final day of the stock market data, wipe the board clean and 
       restart the timeline from the beginning (env.reset()) so the loop can safely take its next step
     * this logic can help ppo in running millions of step without crashing. 
-    '''
+'''
 
     
 

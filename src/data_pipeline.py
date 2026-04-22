@@ -1,99 +1,84 @@
-import gym       #gym is discontinue by openai, so we use gymnasium
-# import gymnasium as gym
-import numpy as np 
 import pandas as pd
-# from data import processed_data 
-#defining the portfolio env
+import numpy as np
+import matplotlib.pyplot as plt
+import gymnasium as gym
+from pathlib import Path
+from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import DummyVecEnv
+from env import PortfolioEnv
 
-class PortfolioEnv(gym.Env):
-    def __init__(self,df):
-        super().__init__()
-        
-        self.df=df
-        self.dates=sorted(df['date'].unique())
-        self.tickers=sorted(df['ticker'].unique())
+#load the data (df_final)
+BASE_DIR=Path(__file__).resolve().parent.parent
+csv_path=BASE_DIR/"data"/"processed_data"/"df_final.csv"
+df_final=pd.read_csv(csv_path,parse_dates=['date'])
 
-        self.num_assets=len(self.tickers)
-        # return, volatility, momentum, sma_ratio , vix_z
-        self.num_features=5 
+#train/dev/test split
+'''
+train_df=df_final[df_final['date']<"2018-01-01"]
+dev_df=df_final[(df_final['date']>="2018-01-01")& (df_final['date']<"2020-01-01")]
+test_df=df_final[df_final['date']>="2020-01-01"]
+''' #this lead to shape to (0,9)??
 
-        #action : portfolio weights
-        self.action_space=gym.spaces.Box(low=0,
-                                         high=1,
-                                         shape=(self.num_assets,),
-                                         dtype=np.float32
-                                        )
-        #observation-> flattened state
-        self.observation_space=gym.spaces.Box(
-            low=-np.inf,high=np.inf,
-            shape=(self.num_assets* self.num_features,),
-            dtype=np.float32
-        )
-        self.current_step=None
-        self.prev_weights=np.ones(self.num_assets)/self.num_assets
+#so we split data dynamically
+sort_dates=df_final['date'].sort_values().unique()
 
-    #reset
-    def reset(self):
-        self.current_step=0
-        self.prev_weights=np.ones(self.num_assets)/self.num_assets
-        return self._get_state()              #as we change the gym lib->gymnasium
-        #now must return two things: state, info (a dictionary).
+train_cutoff=int(len(sort_dates)*0.8)
+dev_cutoff=int(len(sort_dates)*0.9)
 
-    #getting states
-    def _get_state(self):
-        current_date=self.dates[self.current_step]
-        data=self.df[self.df['date']==current_date]
+train_dates=sort_dates[:train_cutoff]
+dev_dates=sort_dates[train_cutoff:dev_cutoff]
+test_dates=sort_dates[dev_cutoff:]
 
-        #ensure correct order of tickes
-        data=data.set_index('ticker').loc[self.tickers]
+train_df = df_final[df_final['date'].isin(train_dates)]
+dev_df = df_final[df_final['date'].isin(dev_dates)]
+test_df = df_final[df_final['date'].isin(test_dates)]
+print(f"Train shape: {train_df.shape} | Dev shape: {dev_df.shape} | Test shape: {test_df.shape}")
 
-        features=data[['return','volatility','momentum','sma_ratio','vix_z']].values
-        return features.flatten().astype(np.float32)
+##environment setup
+def make_env():
+    return PortfolioEnv(train_df)
 
-    def step(self,action):
-        
-        #normalize weights(sum=1)
-        weights=action/(np.sum(action)+1e-8)
+env=DummyVecEnv([make_env])  ##ppo require it
 
-        current_date=self.dates[self.current_step]
-        data=self.df[self.df['date']==current_date]
-        data=data.set_index('ticker').loc[self.tickers]
+## create model
+model=PPO("MlpPolicy",
+          env,
+          learning_rate=3e-4,
+          n_steps=2048,
+          batch_size=64,
+          gamma=0.99,
+          verbose=1)
 
+##train
+print("Start training")
+model.learn(total_timesteps=100_000)
 
-        returns=data['return'].values
+##save model
+model.save("ppo_portfolio")
+print("Model saved")
+##evaluate
+print("Evaluting ")
+test_env=PortfolioEnv(test_df)
 
-        #portfolio return 
-        portfolio_return=np.dot(weights,returns)
+# obs=test_env.reset()
+obs_=test_env.reset()   #Gymnasium reset() returns TWO values (obs and info)
 
-        #transaction cost (based on change in weights)
-        cost=0.001*np.sum(np.abs(weights-self.prev_weights))
+portfolio_values=[1]
 
-        reward=portfolio_return -cost
+for _ in range(len(test_env.dates)-1):
+    # deterministic=True for testing. We want the agent's best guess, not random exploration!
+    action,_=model.predict(obs,deterministic=True)
 
-        #move forward
-        self.current_step+=1
-        done=self.current_step>=len(self.dates)-1
-        # terminated=self.current_step>=len(self.dates)-1
-        # truncated=False
+    obs,reward,terminated,truncated,_=test_env.step(action)
 
-        self.prev_weights=weights
+    portfolio_values.append(portfolio_values[-1]*(1+reward))
 
-        next_state=self._get_state()
+    if terminated or truncated:
+        break
 
-        # return next_state,float(reward),terminated,truncated,{}
-        return next_state,reward,data,{}
-    # now must return five things: next_state, reward, terminated, truncated, info. 
-    # (done was split into terminated for naturally finishing, and truncated for hitting a time limit).
-
-# df_final=pd.read_csv('../data/processed_data/df_final.csv')
-df_final=pd.read_csv('df_final.csv')
-# df_final = pd.read_csv("C://Users//Raj Aryan//Documents//amdpro//MinorS//data//processed_data//df_final.csv")
-
-env=PortfolioEnv(df_final)
-state=env.reset()
-
-for _ in range(10):
-    action=np.random.rand(env.num_assets)
-    next_state,reward,done,_=env.step(action)
-    print("Reward : ",reward)
+#plot
+plt.plot(portfolio_values)
+plt.title("Portfolio growth (ppo)")
+plt.grid()
+plt.show()
 
