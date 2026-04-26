@@ -2,4 +2,6 @@
 .venv/
 .env
 
-log/
+logs/
+
+_pycache_/

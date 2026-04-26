@@ -1,4 +1,8 @@
 import os
+# Fix for the OpenMP Matplotlib/PyTorch crash on Windows
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
+
+import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -64,9 +68,11 @@ model=PPO("MlpPolicy",
           n_steps=2048,
           batch_size=64,
           gamma=0.99,
-          verbose=1)
-
-
+          verbose=1,
+          device="cpu"
+        )
+print("model device use for traning")
+print(model.device)
 
 ##train
 print("Start training with dev set evaluation")
@@ -74,24 +80,31 @@ model.learn(total_timesteps=100_000,callback=eval_callback)
 
 print("loading best model for final evaluation..")
 best_model=PPO.load('./logs/best_model/best_model.zip')
+
+
 ##evaluate
-print("Evaluting ")
-test_env=PortfolioEnv(test_df)
+print("Evaluting on test data")
+# test_env=PortfolioEnv(test_df) #need to wrap the test env in dummyvecEnv
+test_env=DummyVecEnv([lambda :PortfolioEnv(test_df)])  
 
 # obs=test_env.reset()
 obs=test_env.reset()   #Gymnasium reset() returns TWO values (obs and info)
 
 portfolio_values=[1.0]
 
-for _ in range(len(test_env.dates)-1):
+#get the number of days directly from the test dataframe
+num_days=len(test_df['date'].unique())
+
+for _ in range(num_days-1):
     # deterministic=True for testing. We want the agent's best guess, not random exploration!
-    action,_=model.predict(obs,deterministic=True)
+    action,_=best_model.predict(obs,deterministic=True)
+    #vecEnv step() return exactly 4 variable.
+    obs,reward,done,info = test_env.step(action)
 
-    obs,reward,terminated,truncated,_=test_env.step(action)
+    #VecEnv return arrays ,we need first item in reward array
+    portfolio_values.append(portfolio_values[-1]*(1+reward[0]))
 
-    portfolio_values.append(portfolio_values[-1]*(1+reward))
-
-    if terminated or truncated:
+    if done:
         break
 
 #plot
