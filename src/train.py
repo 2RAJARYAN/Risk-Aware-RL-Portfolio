@@ -2,7 +2,6 @@ import os
 # Fix for the OpenMP Matplotlib/PyTorch crash on Windows
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
-import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
