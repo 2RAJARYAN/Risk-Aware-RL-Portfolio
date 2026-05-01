@@ -65,15 +65,33 @@ class PortfolioEnv(gym.Env):
         data=data.set_index('ticker').loc[self.tickers]
 
 
-        returns=data['return'].values
+        actual_returns=data['return'].values
 
         #portfolio return 
-        portfolio_return=np.dot(weights,returns)
+        portfolio_return=np.dot(weights,actual_returns)
 
         #transaction cost (based on change in weights)
-        cost=0.001*np.sum(np.abs(weights-self.prev_weights))
+        cost=0.001*np.sum(np.abs(weights-self.prev_weights))    
+        
+        
+        # reward=portfolio_return -cost  #this leads to high volatility and drawdown
+        
+        #portfolio Return
+        gross_profit=np.sum(weights*actual_returns)
+        
+        # 2. Smooth downside penalty (Adds an extra 20% pain to losses)
+        downside_penalty = 0.2 * np.minimum(0, gross_profit)
 
-        reward=portfolio_return -cost
+    
+        #transaction cost  ->realistic trading 
+        transaction_cost=0.001*np.sum(np.abs(weights-self.prev_weights))
+
+
+        #diversification penalty ->avoid concentration  (the Herfindahl-Hirschman Index (HHI))
+        diversification_penalty=0.01*np.sum(weights**2)
+
+        #final reward
+        reward=gross_profit+downside_penalty-transaction_cost-diversification_penalty
 
         #move forward
         self.current_step+=1

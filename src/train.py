@@ -11,6 +11,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.callbacks import EvalCallback
 from env import PortfolioEnv
+from utils import *
 
 #load the data (df_final)
 BASE_DIR=Path(__file__).resolve().parent.parent
@@ -103,8 +104,42 @@ for _ in range(num_days-1):
     #VecEnv return arrays ,we need first item in reward array
     portfolio_values.append(portfolio_values[-1]*(1+reward[0]))
 
-    if done:
+    if done[0]:
         break
+
+### evaluate equal weight baseline
+print("evaluting equal weight baseline...")
+baseline_env=DummyVecEnv([lambda:PortfolioEnv(test_df)])
+obs=baseline_env.reset()
+baseline_values=[1.0]
+
+num_assets=baseline_env.envs[0].num_assets
+equal_action=[np.ones(num_assets)/num_assets]
+
+for _ in range(num_days-1):
+    obs,reward,done,info=baseline_env.step(equal_action)
+    baseline_values.append(baseline_values[-1]*(1+reward[0]))
+
+    if done[0]:
+        break
+
+##plot 
+print("---final performance metrics---")
+print_metrics(portfolio_values,"Rl agent PPO")
+print_metrics(baseline_values,"equal weight baseline")
+
+plot_comparison(portfolio_values,baseline_values)
+
+
+## save metrics to csv
+os.makedirs("result/metrics",exist_ok=True)
+
+result_df=pd.DataFrame({
+    "rl":portfolio_values,
+    "baseline":baseline_values
+})
+result_df.to_csv("result/metrics/performance.csv",index=False)
+print("csv saved succeed")
 
 #plot
 plt.plot(portfolio_values)
