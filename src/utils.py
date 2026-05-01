@@ -28,14 +28,16 @@ def plot_profolio(portfolio_values,title="protfolio growth"):
     plt.show()
 
 def plot_comparison(rl_values,baseline_values):
-    plt.figure(figsize=(10,5))
-    plt.plot(rl_values,label="portfolio")
-    plt.title("RL vs Baseline")
-    plt.xlabel("time")
-    plt.ylabel("portfolio value")
-    plt.grid(True)
+    plt.figure(figsize=(10, 6))
+    plt.plot(rl_values, label="RL Agent (PPO)", color="blue", linewidth=2)
+    plt.plot(baseline_values, label="Equal Weight Baseline", color="red", linestyle="--")
+    plt.title("Backtest: RL Agent vs Baseline")
+    plt.xlabel("Trading Days")
+    plt.ylabel("Cumulative Value (1.0 = Initial Capital)")
     plt.legend()
+    plt.grid(True, alpha=0.3)
     plt.show()
+
 
 
 def print_metrics(portfolio_values,name="Model"):

@@ -86,19 +86,9 @@ result_df=pd.DataFrame({
 result_df.to_csv("result/metrics/performance.csv",index=False)
 print("csv saved succeed")
 
-# Plotting both lines on the same graph
-plt.figure(figsize=(10, 6))
-plt.plot(portfolio_values, label="RL Agent (PPO)", color="blue", linewidth=2)
-plt.plot(baseline_values, label="Equal Weight Baseline", color="red", linestyle="--")
-
-plt.title("Backtest: RL Agent vs Baseline")
-plt.xlabel("Trading Days")
-plt.ylabel("Cumulative Value (1.0 = Initial Capital)")
-plt.legend()
-plt.grid(True, alpha=0.3)
-plt.show()
-
 # Print the final metrics using your utils.py functions
 print("---final performance metrics---")
 print_metrics(portfolio_values,"Rl agent PPO")
 print_metrics(baseline_values,"equal weight baseline")
+
+plot_comparison(portfolio_values,baseline_values)
