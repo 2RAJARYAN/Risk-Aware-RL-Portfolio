@@ -142,10 +142,11 @@ result_df.to_csv("result/metrics/performance.csv",index=False)
 print("csv saved succeed")
 
 #plot
-plt.plot(portfolio_values)
-plt.title("Portfolio growth (ppo)")
+plt.plot(portfolio_values,label="RL Agent(PPO)",color="blue")
+plt.plot(baseline_values,label="Baseline",color="orange")
+plt.title("Portfolio Growth Comparison")
 plt.xlabel("Trading Days")
 plt.ylabel("Cumulative Value (1.0 = Initial Capital)")
-plt.grid()
+plt.grid(True)
+plt.legend()
 plt.show()
-
