@@ -75,8 +75,8 @@ print("model device use for traning")
 print(model.device)
 
 ##train
-print("Start training with dev set evaluation")
-model.learn(total_timesteps=100_000,callback=eval_callback)
+# print("Start training with dev set evaluation")
+# model.learn(total_timesteps=100_000,callback=eval_callback)
 
 print("loading best model for final evaluation..")
 best_model=PPO.load('./logs/best_model/best_model.zip')
@@ -122,31 +122,12 @@ for _ in range(num_days-1):
 
     if done[0]:
         break
-
-##plot 
-print("---final performance metrics---")
-print_metrics(portfolio_values,"Rl agent PPO")
-print_metrics(baseline_values,"equal weight baseline")
-
-plot_comparison(portfolio_values,baseline_values)
-
-
-## save metrics to csv
-os.makedirs("result/metrics",exist_ok=True)
-
-result_df=pd.DataFrame({
-    "rl":portfolio_values,
-    "baseline":baseline_values
-})
-result_df.to_csv("result/metrics/performance.csv",index=False)
-print("csv saved succeed")
+    
 
 #plot
-plt.plot(portfolio_values,label="RL Agent(PPO)",color="blue")
-plt.plot(baseline_values,label="Baseline",color="orange")
-plt.title("Portfolio Growth Comparison")
+plt.plot(portfolio_values)
+plt.title("Portfolio growth (ppo)")
 plt.xlabel("Trading Days")
 plt.ylabel("Cumulative Value (1.0 = Initial Capital)")
-plt.grid(True)
-plt.legend()
+plt.grid()
 plt.show()
