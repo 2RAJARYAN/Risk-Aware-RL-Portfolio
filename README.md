@@ -88,8 +88,9 @@ project/
 │   ├── data_pipeline.py
 │   ├── env.py
 │   ├── train.py
+|   ├── backtest.py
 │   └── utils.py
-│
+│   
 ├── notebooks/
 │   └── dj30.ipynb
 │
