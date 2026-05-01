@@ -64,6 +64,7 @@ obs = test_env.reset()
 baseline_values = [1.0]
 
 # VecEnvs expect a "batch" of actions, so we wrap the array in a list
+# Baseline logic: divide capital evenly among all 30 stocks
 equal_weights = [np.ones(num_assets) / num_assets]
 
 for _ in range(num_days - 1):
