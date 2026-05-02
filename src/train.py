@@ -74,9 +74,9 @@ model=PPO("MlpPolicy",
 print("model device use for traning")
 print(model.device)
 
-##train
-# print("Start training with dev set evaluation")
-# model.learn(total_timesteps=100_000,callback=eval_callback)
+#train
+print("Start training with dev set evaluation")
+model.learn(total_timesteps=100_000,callback=eval_callback)
 
 print("loading best model for final evaluation..")
 best_model=PPO.load('./logs/best_model/best_model.zip')
